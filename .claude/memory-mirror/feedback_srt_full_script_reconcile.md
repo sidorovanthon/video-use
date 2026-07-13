@@ -33,4 +33,12 @@ the Scribe cache ([[feedback_srt_stutter_token]]). Mechanics that worked:
 Only word-forms need fixing — captions are UPPERCASE 2-word chunks, so pure comma/
 dash/paren differences don't show; do NOT inject parens/dashes into caption text.
 Captions are a sidecar .srt, so text fixes need NO re-render of final.mp4.
-Keep going until a full re-diff is clean. Extends the Phase 5 "apply script fixes" step.
+
+**Deterministic gate (added 2026-07-13):** Phase 1 saves the pasted script verbatim
+to `<edit>/script.txt`; the mandatory Phase 6 gate is
+`uv run helpers/diff_srt_script.py <edit>/final.srt <edit>/script.txt` — it tokenizes
+both (lowercase, punctuation-agnostic, hyphen/apostrophe kept intra-word), aligns with
+difflib, prints every MISMATCH (substitution / short insert-delete = drift) and exits
+1, while long script-only runs list as intended CUTs (info, exit stays 0 if only cuts).
+Ship only on exit 0. This turns the old prose "spot-check" into a real gate. SKILL.md
+Phase 5/6 updated to match. Keep going until the gate is green.

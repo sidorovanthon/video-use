@@ -46,6 +46,10 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
 - Arg is the prep folder (an mp4 arg → use its parent folder).
 - Inventory the folder: source `<stem>.mp4`; pre-made `isolated.mp3` +
   `transcript.json`; the user's script text (for SRT cross-check) if present.
+- **Save the supplied script verbatim to `<edit>/script.txt`** (words only —
+  strip any `Скрипт для сверки:` prefix and the folder path; keep the spoken
+  title line). Phase 5/6's SRT gate diffs against this file, so it is not
+  optional when the user pastes a script (memory: feedback-srt-full-script-reconcile).
 - **Pre-made isolated audio present → do NOT re-run ElevenLabs** — mux clean
   audio over video (`-c copy`) and cut from that (memory:
   feedback-premade-isolated-audio). The mux target is **`<edit>/source_clean.mp4`
@@ -108,14 +112,31 @@ python helpers/grade_sheet.py sheet <edit>/edl.json --time <brightest talking fr
 uv run helpers/render.py <edit>/edl.json -o <edit>/final.mp4 --no-subtitles --fps 60
 ```
 
-`build_master_srt` → `master.srt`; apply script fixes (`CLOUD`→`CLAUDE` etc.)
-on a filtered transcript COPY, never the cache; `cp master.srt final.srt`.
+`build_master_srt` → `master.srt`. **Reconcile every caption against the script
+word-by-word — NOT just proper nouns.** Scribe drops plural `-s`, contractions
+(`I've`→`I`), and unstressed articles (`a`), and swaps function words
+(`in`↔`and`, `the`↔`a`); a term-only pass (`CLOUD`→`CLAUDE`, `notation`→
+`notations`, `Domain Specific`→`domain-specific`) misses all of these and shipped
+wrong on edit-26. Fix in a filtered transcript COPY, never the cache (override the
+word `text`; merge two tokens for a hyphenated compound; insert a short token for a
+missing article), then rebuild. `cp master.srt final.srt`. The Phase 6 gate is the
+mechanical backstop — run it (memory: feedback-srt-full-script-reconcile).
 
 ## Phase 6 — verify before declaring done
 
 Frames at every join (no visible grade/exposure step), `silencedetect` on
-joins (~0.15 s), `r_frame_rate` = 60/1, loudness ≈ −14 LUFS, SRT spot-check
-against the script. Show the user 2–3 verification frames.
+joins (~0.15 s), `r_frame_rate` = 60/1, loudness ≈ −14 LUFS. Show the user 2–3
+verification frames.
+
+**MANDATORY SRT gate (deterministic — not a "spot-check"):**
+```bash
+uv run helpers/diff_srt_script.py <edit>/final.srt <edit>/script.txt
+```
+Exit 0 = captions match the script word-for-word (modulo intended cuts, which it
+lists for eyeball confirmation). Exit 1 = caption drift (dropped plural/article,
+swapped function word, un-hyphenated compound) → fix in a transcript COPY and
+rebuild until it passes. Do NOT ship on a non-zero exit. If no `script.txt` exists
+(user gave no script), fall back to reading the captions against the transcript.
 
 **MANDATORY edge gate before shipping — probe every segment's cut edges in the
 rendered `final.mp4` (this is the check that would have caught the "For" clip

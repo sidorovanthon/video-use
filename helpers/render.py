@@ -366,7 +366,11 @@ def _words_in_range(transcript: dict, t_start: float, t_end: float) -> list[dict
         we = w.get("end")
         if ws is None or we is None:
             continue
-        if we <= t_start or ws >= t_end:
+        # Start-based membership (seg_start ≤ word.start < seg_end) — binding rule
+        # feedback_srt_straddle_dup: a word straddling a split cut must caption in
+        # exactly ONE segment (the one its onset falls in), never both. Overlap
+        # membership double-captioned the straddling word (phantom ~40ms cue).
+        if not (t_start <= ws < t_end):
             continue
         out.append(w)
     return out
