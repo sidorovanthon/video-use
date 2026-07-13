@@ -21,8 +21,14 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
    resolve (commit or stash) before proceeding — uncommitted pipeline fixes
    died in the 2026-07 data loss.
 2. **Deps:** if the pull changed `pyproject.toml` → `uv sync`.
-3. **Tools:** `ffmpeg -version` and `ffprobe -version` must work (fresh shells
-   get them from PATH; if missing: `winget install --id Gyan.FFmpeg -e`).
+3. **Tools:** `ffmpeg -version` and `ffprobe -version` must work. If they report
+   "command not found" they are almost certainly **installed but not on this
+   shell's PATH** (winget put them in User PATH, but the tool shell's parent
+   predates that entry — `setx`/registry edits do NOT fix the live session).
+   Do NOT reinstall: prepend the winget bin to `PATH` in every ffmpeg-using
+   command (and helpers that shell out — render.py, grade_sheet.py — inherit the
+   shell PATH). Path + exact snippet: memory `reference_ffmpeg_path`. Only if the
+   binary genuinely isn't installed: `winget install --id Gyan.FFmpeg -e`.
    `ELEVENLABS_API_KEY` in `.env` is only needed if transcription will run.
 4. **Memory mirror (durability):** copy
    `~/.claude/projects/C--Users-sidor-repos-video-use/memory/*.md` →
@@ -35,8 +41,11 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
 - Inventory the folder: source `<stem>.mp4`; pre-made `isolated.mp3` +
   `transcript.json`; the user's script text (for SRT cross-check) if present.
 - **Pre-made isolated audio present → do NOT re-run ElevenLabs** — mux clean
-  audio over video (`-c copy`) into `source_clean.mp4` and cut from that
-  (memory: feedback-premade-isolated-audio).
+  audio over video (`-c copy`) and cut from that (memory:
+  feedback-premade-isolated-audio). The mux target is **`<edit>/source_clean.mp4`
+  inside the Phase 2 edit dir**, so create that dir FIRST (do Phase 2 before the
+  mux) — writing it to the prep-folder root leaves it in the wrong place and it
+  must be moved (per the edit-dir convention, everything lives inside `edit-NN/`).
 - Missing transcript → `helpers/transcribe.py` (Scribe; costs money — say so).
 
 ## Phase 2 — working dir
@@ -50,12 +59,19 @@ Global numbering: find max `edit-*` N across `M:/videos/OBS/edit-*` AND
 ## Phase 3 — cut plan
 
 `helpers/pack_transcripts.py --edit-dir <edit>` → read `takes_packed.md`.
-Pre-scan retakes (drop false starts, keep clean retakes) and dead-air pauses
-≥ ~1.5 s inside kept regions. Verify segment STARTs with `silencedetect`
-(Scribe onset tokens are degenerate after silences) and tails against the
-waveform (word.end drifts both ways). Trim every join to ~0.15 s residual —
-preserved breaths get flagged as defects. Build `edl.json` (absolute source
-paths). Cross-check kept text against the user's script.
+Drop entirely: false starts / retakes (keep the clean retake) and any big
+dead-air gap. Then **split at EVERY `silencedetect` gap ≥ ~0.3 s and trim it to
+~0.15 s residual** — pad ~0.075 s into the silence on each side (never clips
+speech). A single visually continuous take is **NOT** an exception: its
+inter-phrase / inter-sentence pauses (0.4–1.1 s) are joins to trim too, not
+"breaths to keep" — preserving them gets flagged as a defect (memory:
+feedback-trim-pauses-tight; edit-24 was recut for exactly this). There is no
+"only pauses ≥ 1.5 s" threshold — that reading caused the edit-24 miss.
+Derive the split points mechanically from `silencedetect` on
+`source_clean.mp4`; also verify each segment START (Scribe onset tokens are
+degenerate after silences) and tail against the waveform (word.end drifts both
+ways). Build `edl.json` (absolute source paths). Cross-check kept text against
+the user's script.
 
 ## Phase 4 — GRADE GATE (mandatory, mechanical — never inherit a grade)
 
