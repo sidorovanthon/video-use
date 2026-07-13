@@ -28,6 +28,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows consoles often default to a legacy codepage (cp1251/cp1252) that
+# can't encode characters like '→' used in progress output; the helper would
+# then die mid-run even though its file outputs were already written.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 try:
     from grade import get_preset, auto_grade_for_clip  # same directory
 except Exception:
@@ -290,6 +297,11 @@ def extract_all_segments(
 
         if is_auto:
             seg_filter, _stats = auto_grade_for_clip(src_path, start=start, duration=duration, verbose=False)
+        elif r.get("grade"):
+            # Per-range grade override (e.g. per-segment exposure match on a
+            # source whose lighting drifts between takes). Falls back to the
+            # EDL-level grade when a range omits its own.
+            seg_filter = resolve_grade_filter(r["grade"])
         else:
             seg_filter = resolved
 

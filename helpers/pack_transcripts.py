@@ -20,6 +20,13 @@ import json
 import sys
 from pathlib import Path
 
+# Windows consoles often default to a legacy codepage (cp1251/cp1252) that
+# can't encode characters like '→' used in progress output; the helper would
+# then die mid-run even though its file outputs were already written.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 def format_time(seconds: float) -> str:
     """Format a time in seconds as "NNN.NN" with fixed 6-char width for alignment."""
