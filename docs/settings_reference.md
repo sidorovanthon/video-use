@@ -130,4 +130,4 @@ build_master_srt(json.loads(open('edl.json').read()), Path('<edit>'), Path('<edi
 | 2026-07-06 | edit-21 | Migrating P5 | face 92–106; 5-up sheet → **v7-contrast** (lift66 output ~125 = blown) |
 | 2026-07-06 | edit-22 | Migrating P6 | face 88–96; **v7-contrast**; pre-made isolated audio muxed |
 | 2026-07-06 | edit-23 | Migrating P7 finale | brightest front (~114) + mid-take exposure drift → **v7-contrast + per-segment gamma match** |
-| 2026-07-13 | edit-24 | Bubble/AI (standalone) | very dim, uniform (face YAVG ~43–45 all 3 segs, no per-seg match) → **v7-lift 0.66** from 5-up sheet; dropped 2 false starts |
+| 2026-07-13 | edit-24 | Bubble/AI (standalone) | very dim, uniform (face YAVG ~43–45, no per-seg match) → **v7-lift 0.66** from 5-up sheet; dropped 2 false starts. First pass left inter-phrase pauses in the continuous body take → user flagged → recut into 16 phrase segments, every ≥0.3s pause trimmed to ~0.15s (73.4→67.8s) |

@@ -11,8 +11,10 @@ On this user's OBS vertical talking-head monologues, do **not** preserve natural
 
 **Why:** Observed 2026-06-09, edit-10. I merged adjacent clean phrases to preserve ~1.4s natural pauses (after "actually doing", after "work with") and left a Scribe-overshot tail after "cognitive toolkit". User reviewed and flagged all three preserved pauses as defects to remove. This contradicts the generic skill guidance ("speaker handoffs benefit from 400–600ms air") and the recipe's dead-air note — for THIS footage class the user wants snappy pacing.
 
+**Recurrence 2026-07-13, edit-24:** treated a single uninterrupted take (the whole BODY, one speaker, no retakes) as "one continuous segment" and kept its 0.4–1.1s inter-phrase pauses (after "on its own", "straightforward", "not minified"). User flagged them. A visually continuous take is **NOT** an exception — split it at every ≥~0.3s phrase/sentence pause and trim each to ~0.15s, exactly as if they were separate takes. Recut into 16 phrase segments (67.8s from 73.4s).
+
 **How to apply:**
-- Default to one segment **per kept phrase** with tight pads; only merge if there is genuinely no inter-phrase gap.
+- Default to one segment **per kept phrase** with tight pads; only merge if there is genuinely no inter-phrase gap. Derive the split points mechanically: run `silencedetect` on `source_clean.mp4` and cut at every silence ≥ ~0.3s, padding ~0.075s into the silence on each side (never clips speech).
 - After rendering, run `ffmpeg -ss A -to B -i final.mp4 -af silencedetect=noise=-40dB:d=0.15 -f null -` at each join to objectively confirm gaps are <~0.2s (don't pixel-read the waveform image).
 - Watch for Scribe end-timestamp **overshoot on the last word of a kept phrase** (not just the closing word of the whole video) — it bundles trailing silence and creates a pause at the join; cut to the audible energy end. See [[feedback_scribe_tail_overshoot]].
 
