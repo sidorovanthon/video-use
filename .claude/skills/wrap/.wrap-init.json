@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-13",
+  "lastAuditAt": "2026-07-13",
+  "foldedThemes": [
+    "standard-prompt-command",
+    "session-start-freshness-check",
+    "single-copy-state-loss",
+    "uncommitted-pipeline-fixes",
+    "canonical-instructions-decentralized",
+    "grade-continuity-overexposure",
+    "helper-console-encoding-and-path-bugs"
+  ],
+  "tracker": "github",
+  "slug": "C--Users-sidor-repos-video-use",
+  "instructionFile": "CLAUDE.md"
+}
