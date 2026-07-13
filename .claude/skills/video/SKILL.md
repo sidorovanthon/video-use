@@ -27,7 +27,13 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
    predates that entry — `setx`/registry edits do NOT fix the live session).
    Do NOT reinstall: prepend the winget bin to `PATH` in every ffmpeg-using
    command (and helpers that shell out — render.py, grade_sheet.py — inherit the
-   shell PATH). Path + exact snippet: memory `reference_ffmpeg_path`. Only if the
+   shell PATH). **Resolve the bin dir version-agnostically — the `ffmpeg-<ver>-full_build`
+   folder name bumps on every winget update (was 8.0, silently became 8.1.2 → "not
+   found" on the first try this session); NEVER hardcode the version from memory:**
+   ```bash
+   export PATH="$(ls -d /c/Users/sidor/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_*/ffmpeg-*-full_build/bin | tail -1):$PATH"
+   ```
+   Details: memory `reference_ffmpeg_path`. Only if the
    binary genuinely isn't installed: `winget install --id Gyan.FFmpeg -e`.
    `ELEVENLABS_API_KEY` in `.env` is only needed if transcription will run.
 4. **Memory mirror (durability):** copy
@@ -67,11 +73,21 @@ inter-phrase / inter-sentence pauses (0.4–1.1 s) are joins to trim too, not
 "breaths to keep" — preserving them gets flagged as a defect (memory:
 feedback-trim-pauses-tight; edit-24 was recut for exactly this). There is no
 "only pauses ≥ 1.5 s" threshold — that reading caused the edit-24 miss.
-Derive the split points mechanically from `silencedetect` on
-`source_clean.mp4`; also verify each segment START (Scribe onset tokens are
-degenerate after silences) and tail against the waveform (word.end drifts both
-ways). Build `edl.json` (absolute source paths). Cross-check kept text against
-the user's script.
+**Derive BOTH edges of every segment mechanically from `silencedetect` on
+`source_clean.mp4`, NEVER from Scribe `word.start`/`word.end` ± a pad.** Scribe
+timings choose *which words* to keep; they do NOT place the cut. They drift in
+BOTH directions at edges and both bit edit-25: `word.end` overshot the acoustic
+end → a 0.47 s pause at a join; `word.start` landed LATE → the "For"/"Okay"
+onsets got clipped. Rule:
+- **segment END** = the `silence_start` of the gap *after* the last kept word,
+  `+ ~0.10 s`.
+- **segment START** = the `silence_end` of the gap *before* the first kept word,
+  `− ~0.06 s`.
+Build `edl.json` (absolute source paths). Cross-check kept text against the
+user's script. (Sign-off/outro exception: if the user is fine with the closing
+pauses, the standard outro block — human-script disclaimer + subscribe CTA +
+"Okay, bye" — reads better kept whole as one un-cut range; memory
+`feedback_trim_pauses_tight`.)
 
 ## Phase 4 — GRADE GATE (mandatory, mechanical — never inherit a grade)
 
@@ -100,6 +116,20 @@ on a filtered transcript COPY, never the cache; `cp master.srt final.srt`.
 Frames at every join (no visible grade/exposure step), `silencedetect` on
 joins (~0.15 s), `r_frame_rate` = 60/1, loudness ≈ −14 LUFS, SRT spot-check
 against the script. Show the user 2–3 verification frames.
+
+**MANDATORY edge gate before shipping — probe every segment's cut edges in the
+rendered `final.mp4` (this is the check that would have caught the "For" clip
+before the user did; run it, do not ship on faith):**
+- **Onset (clip) check:** at each segment's output-start time, read the first
+  ~40 ms RMS (`astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level`).
+  A clean onset starts in silence and ramps up → first frame **≤ ~−35 dB**. A
+  first frame **hotter than ~−25 dB = the segment begins mid-word (clipped)** →
+  move that start earlier to `silence_end − 0.06` and re-render.
+- **Tail (overshoot) check:** `silencedetect` residual at each join should be
+  ~0.12–0.22 s. **> ~0.25 s = a Scribe `word.end` overshoot left a pause** → pull
+  that end back to the acoustic `silence_start + 0.10` and re-render.
+
+Only declare done once every segment passes both.
 
 ## Phase 7 — wrap-up
 
