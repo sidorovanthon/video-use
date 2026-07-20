@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: bcb26f67-1934-4e93-91eb-0c79d77a7c03
+  modified: 2026-07-20T04:28:46.088Z
 ---
 
 On this dim/noisy OBS source, `silencedetect` (noise=-30dB) marks a "gap" that is
@@ -20,10 +21,22 @@ edit-26 and would have produced clipped/loose cuts if trusted blindly:
   at 42.95 (a −43 dB breath rose above the floor). START = silence_end−0.06 = 42.89
   left a 0.26 s over-long head → join residual overshot to ~0.35 s (tail-gate flagged it).
 
+**INVERSE case (edit-29) — silencedetect right, Scribe overshot:** the disagreement
+can also go the OTHER way. On 3 sibilant/nasal endings silence_start fired 0.4–0.6 s
+BEFORE Scribe's word.end ("safe." Scribe→18.66 vs silence@18.16; "attention." →84.70
+vs 84.06; "files." →60.64 vs 60.18). Trusting Scribe there, I almost OVERRODE the
+silence edge and kept a ~0.5 s pause. The 40 ms RMS probe of the disputed span read
+**−50 to −57 dB = true silence → silencedetect was the truth, Scribe's word.end was
+tail-overshoot** ([[feedback_scribe_tail_overshoot]]) → kept the mechanical edge and
+trimmed the real pause. So the RMS probe is the arbiter in BOTH directions: −24 dB in
+the "gap" = still speech, don't cut (edit-26); −55 dB = real gap, DO cut / edge is real
+(edit-29). Never override a silence edge toward Scribe's word.end on faith — probe first.
+
 **Why:** silencedetect's own boundaries are peak/threshold artifacts, not word edges;
 they drift INTO words (quiet consonant tails) and END early (breaths). Scribe word.start/
 word.end have their own drift ([[feedback_scribe_tail_overshoot]],
-[[feedback_scribe_onset_token]]), so neither source alone is authoritative.
+[[feedback_scribe_onset_token]]), so neither source alone is authoritative — the RMS
+probe breaks the tie.
 
 **How to apply:** before treating a `silence_start`/`silence_end` as a splittable pause
 or a segment edge, cross-check it against the nearest word.end/word.start AND a 40 ms
