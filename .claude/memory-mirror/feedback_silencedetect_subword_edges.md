@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: bcb26f67-1934-4e93-91eb-0c79d77a7c03
-  modified: 2026-07-20T04:28:46.088Z
+  modified: 2026-07-27T03:11:19.527Z
 ---
 
 On this dim/noisy OBS source, `silencedetect` (noise=-30dB) marks a "gap" that is
@@ -31,6 +31,21 @@ tail-overshoot** ([[feedback_scribe_tail_overshoot]]) → kept the mechanical ed
 trimmed the real pause. So the RMS probe is the arbiter in BOTH directions: −24 dB in
 the "gap" = still speech, don't cut (edit-26); −55 dB = real gap, DO cut / edge is real
 (edit-29). Never override a silence edge toward Scribe's word.end on faith — probe first.
+
+**edit-31 — the dismissal failure mode: probe at CUT time, not only when in doubt.**
+At Phase 3 I saw silence 102.640–102.990 (0.350 s) sitting inside Scribe's "meetings"
+(102.20–103.00) and dismissed it as another sub-word tail *by pattern-match on this very
+memory*, without probing. It was a **real 0.35 s pause** (RMS −43…−56 dB) — Scribe's
+word.end had overshot by 0.36 s (the edit-29/30 inverse case). It only surfaced in Phase 6
+because the SRT gate asked a *different* question ("was `(calls)` spoken here?") and that
+probe exposed the silence → segment had to be split and the video re-rendered. The two
+cases are indistinguishable from timings alone: "Scribe's word spans the gap" is the
+signature of BOTH a sibilant tail and a word.end overshoot.
+
+**How to apply (hardened):** probe EVERY silencedetect gap ≥ 0.3 s that falls inside a
+kept range — including (especially) the ones a Scribe word appears to span. Never resolve
+one by reasoning; the 40 ms RMS probe is cheap and is the only arbiter. Doing this during
+Phase 3 costs seconds; skipping it costs a full re-render.
 
 **Why:** silencedetect's own boundaries are peak/threshold artifacts, not word edges;
 they drift INTO words (quiet consonant tails) and END early (breaths). Scribe word.start/
