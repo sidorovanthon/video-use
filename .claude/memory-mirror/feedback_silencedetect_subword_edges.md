@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: bcb26f67-1934-4e93-91eb-0c79d77a7c03
-  modified: 2026-07-27T03:11:19.527Z
+  modified: 2026-07-27T03:38:23.858Z
 ---
 
 On this dim/noisy OBS source, `silencedetect` (noise=-30dB) marks a "gap" that is
@@ -46,6 +46,23 @@ signature of BOTH a sibilant tail and a word.end overshoot.
 kept range — including (especially) the ones a Scribe word appears to span. Never resolve
 one by reasoning; the 40 ms RMS probe is cheap and is the only arbiter. Doing this during
 Phase 3 costs seconds; skipping it costs a full re-render.
+
+**edit-32 — two adjacent silences split by a sub−40 dB blip = an INAUDIBLE plosive
+release; cut BEFORE it, not after.** At the "But that's not it." → outro join,
+silencedetect reported two back-to-back gaps, 183.299–183.552 and 183.552–183.788,
+separated by a single loud-enough sample at 183.552. I read that blip as the /t/
+release (i.e. the word still ending) and placed END at the *second* silence_start
++0.10 = 183.650. The rendered join measured **0.40 s** of quiet — the tail gate fired.
+The RMS probe shows why: the vowel of "it" ends at 183.29 (−24.7 → −38 → −55 dB) and
+the "release" at 183.552 peaks at only **−44.9 dB** — 20 dB below the quietest audible
+speech here, i.e. inaudible. Correct END = first silence_start + 0.10 = 183.39.
+
+**How to apply:** when silencedetect emits two adjacent gaps separated by one blip,
+probe the blip's level before deciding which `silence_start` is the word's end.
+≳ −35 dB = a real release, keep it (cut after); ≲ −40 dB = an inaudible plosive burst,
+treat the FIRST silence_start as the acoustic end and cut before the blip. Word-final
+/t/ /k/ /p/ after an unstressed vowel is the usual producer. Timings alone can't tell
+this from a real release — same "probe, don't reason" rule as the edit-31 case above.
 
 **Why:** silencedetect's own boundaries are peak/threshold artifacts, not word edges;
 they drift INTO words (quiet consonant tails) and END early (breaths). Scribe word.start/
