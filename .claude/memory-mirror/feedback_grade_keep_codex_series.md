@@ -24,3 +24,7 @@ Migrating faces were bright, this one is dim-by-choice).
 continuity is a default, never a rule (edit-19/edit-27 lesson). If face luma is
 uniform across segments (as on edit-28, spread <3), no per-segment gamma is
 needed; a single top-level grade suffices.
+
+Confirmed three times running: Part 1 = edit-28 (raw ~66–69), Part 2 = edit-29
+(raw ~68–71), Part 3 = edit-30 (raw 68.6–71.0, spread 2.4). Every part so far has
+been dim + uniform → single v7-contrast, no per-segment gamma.
