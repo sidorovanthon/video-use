@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: ba2b871a-2172-4df5-bcee-bd222cfe622f
-  modified: 2026-08-03T02:31:11.297Z
+  modified: 2026-08-03T02:57:28.342Z
 ---
 
 The RMS probe settles *silence vs speech*. A second class of SRT-gate mismatch is
@@ -48,6 +48,20 @@ with no separation. What actually resolved it:
   — *shorter*, so there is no extra /s/ from "this" → `the`. A presence test says
   nothing here because "structure" supplies its own /s/ either way.
 
+**edit-35 — SYLLABLE COUNTING on a plain RMS track beats any spectral test when the
+candidates differ by a whole syllable.** `capabilities` vs Scribe's `abilities`
+(5 syllables vs 4) needs no formants at all: run `word_probe.py rms` over the token
+and read the envelope. Syllabic nuclei show as peaks, stop closures as sharp dips,
+and a VOICELESS stop drops much deeper than a voiced one. edit-35's token had **five
+peaks** (13.83 / 13.93 / 14.06 / 14.14 / 14.33) split by two deep dips at −40.7 dB
+(13.88) and −40.3 dB (14.21) — exactly the /p/ of ca-PA and the /t/ of li-TIES.
+`abilities` would give four peaks and a *voiced* /b/ closure, which does not fall to
+−40 dB. Duration alone was useless here (0.64 s fits both at plausible rates); the
+peak count and the closure depth decided it. Same track also settled `doesn't` vs
+`does not` in one read: one stressed peak at −17.0 dB followed by a reduced bump
+11 dB down = contraction, whereas "not" would carry a second peak of comparable
+level.
+
 Also settled that session without a probe, on structure rather than acoustics:
 Scribe merged `Code or`→`Coder` and split `there's`→`there is`. For the merge, the
 disputed second syllable measured F2 1209-1355 against the speaker's confirmed "or"
@@ -55,9 +69,11 @@ in the same collocation at 1118-1394 = the same token. For the split, "there ?? 
 spanned **0.270 s** vs 0.300/0.330 s for two known `there's a` controls — an extra
 syllable cannot be *shorter*, so it is the contraction.
 
-**Direction of the fix is not fixed.** These five mismatches split 3 transcript-side
+**Direction of the fix is not fixed.** edit-34's five mismatches split 3 transcript-side
 (Scribe wrong: Coder, there is, the→a) and 2 script-side (Scribe right: in→on,
-this→the). Decide each one on its own measurement; see
+this→the); edit-35's eight split the other way — 3 transcript-side (capabilities,
+Wispr Flow, Glaido) and **5 script-side**, with Scribe right on doesn't, use, the
+extra "the", patterns and something. Decide each one on its own measurement; see
 [[feedback_script_txt_reflects_shipped_adlib]].
 
 **Why:** deciding these from context alone ("nobody says coding engine") is the
