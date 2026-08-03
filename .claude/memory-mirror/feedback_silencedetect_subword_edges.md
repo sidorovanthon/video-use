@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: bcb26f67-1934-4e93-91eb-0c79d77a7c03
-  modified: 2026-07-27T03:38:23.858Z
+  modified: 2026-08-03T02:30:43.621Z
 ---
 
 On this dim/noisy OBS source, `silencedetect` (noise=-30dB) marks a "gap" that is
@@ -63,6 +63,25 @@ probe the blip's level before deciding which `silence_start` is the word's end.
 treat the FIRST silence_start as the acoustic end and cut before the blip. Word-final
 /t/ /k/ /p/ after an unstressed vowel is the usual producer. Timings alone can't tell
 this from a real release — same "probe, don't reason" rule as the edit-31 case above.
+
+**edit-34 — silencedetect can report NOTHING for a genuine 0.41 s pause.** The prior
+cases are all silencedetect firing in the *wrong place*; this is it not firing **at
+all**. Between "…in reasoning mode," and "and describe the project…" Scribe showed a
+word gap 140.48→140.90, but `silencedetect=n=-35dB:d=0.20` emitted **no event** there
+— so a cut plan built only from silencedetect events (the Phase 3 wording "split at
+EVERY silencedetect gap ≥0.3 s") would have shipped a 0.41 s pause mid-sentence. The
+RMS probe shows a real gap: speech ends 140.435, resumes 140.853, and every frame
+between reads **−36…−61 dB**. The likely cause is a couple of samples poking above
+threshold, which resets silencedetect's `d=` duration counter, so no run ever reaches
+0.20 s. Frames below the threshold are NOT guaranteed to surface as an event.
+
+**How to apply:** treat the union of BOTH sources as the candidate list — every
+`silencedetect` gap AND every Scribe word-to-word gap ≥ 0.3 s inside a kept range —
+then probe each candidate with RMS. Neither source alone enumerates the real pauses:
+silencedetect invents gaps inside words (edit-26) and misses real ones (edit-34);
+Scribe's word.end drifts both ways (edit-25/29/31). Cheap check: after building the
+EDL, diff the Scribe gap list against the silencedetect gap list and probe anything
+that appears in only one of them.
 
 **Why:** silencedetect's own boundaries are peak/threshold artifacts, not word edges;
 they drift INTO words (quiet consonant tails) and END early (breaths). Scribe word.start/

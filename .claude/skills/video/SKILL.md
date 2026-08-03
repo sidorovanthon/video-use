@@ -44,8 +44,10 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
 ## Phase 1 — resolve inputs
 
 - Arg is the prep folder (an mp4 arg → use its parent folder).
-- Inventory the folder: source `<stem>.mp4`; pre-made `isolated.mp3` +
-  `transcript.json`; the user's script text (for SRT cross-check) if present.
+- Inventory the folder: source `<stem>.mp4` (OBS often writes `.mkv` instead —
+  same h264 1080×1920@60 stream, muxes with `-c copy`, no re-encode); pre-made
+  `isolated.mp3` + `transcript.json`; the user's script text (for SRT
+  cross-check) if present.
 - **Save the supplied script verbatim to `<edit>/script.txt`** (words only —
   strip any `Скрипт для сверки:` prefix and the folder path; keep the spoken
   title line). Phase 5/6's SRT gate diffs against this file, so it is not
@@ -70,9 +72,14 @@ Global numbering: find max `edit-*` N across `M:/videos/OBS/edit-*` AND
 
 `helpers/pack_transcripts.py --edit-dir <edit>` → read `takes_packed.md`.
 Drop entirely: false starts / retakes (keep the clean retake) and any big
-dead-air gap. Then **split at EVERY `silencedetect` gap ≥ ~0.3 s and trim it to
-~0.15 s residual** — pad ~0.075 s into the silence on each side (never clips
-speech). A single visually continuous take is **NOT** an exception: its
+dead-air gap. Then **split at EVERY gap ≥ ~0.3 s and trim it to ~0.15 s
+residual** — pad ~0.075 s into the silence on each side (never clips speech).
+Enumerate those gaps from the **UNION of `silencedetect` gaps AND Scribe
+word-to-word gaps**, then RMS-probe every candidate: neither source lists them
+all. silencedetect invents gaps inside quiet word tails (edit-26) *and misses
+real ones* — on edit-34 a genuine 0.41 s pause (RMS −36…−61 dB throughout)
+produced **no silencedetect event at all** at `-35dB/0.20`, and only the Scribe
+word gap flagged it (memory: feedback-silencedetect-subword-edges). A single visually continuous take is **NOT** an exception: its
 inter-phrase / inter-sentence pauses (0.4–1.1 s) are joins to trim too, not
 "breaths to keep" — preserving them gets flagged as a defect (memory:
 feedback-trim-pauses-tight; edit-24 was recut for exactly this). There is no
@@ -119,7 +126,11 @@ word-by-word — NOT just proper nouns.** Scribe drops plural `-s`, contractions
 `notations`, `Domain Specific`→`domain-specific`) misses all of these and shipped
 wrong on edit-26. Fix in a filtered transcript COPY, never the cache (override the
 word `text`; merge two tokens for a hyphenated compound; insert a short token for a
-missing article), then rebuild. `cp master.srt final.srt`. The Phase 6 gate is the
+missing article), then rebuild. **Arbitrate each mismatch acoustically with
+`helpers/word_probe.py` (`formant` / `sib` / `rms`) against a control from the same
+file in the same phonetic environment** — the fix direction is not fixed, edit-34
+split 3 transcript-side / 2 script-side (memory:
+feedback-word-identity-spectral-probe). `cp master.srt final.srt`. The Phase 6 gate is the
 mechanical backstop — run it (memory: feedback-srt-full-script-reconcile).
 
 ## Phase 6 — verify before declaring done
