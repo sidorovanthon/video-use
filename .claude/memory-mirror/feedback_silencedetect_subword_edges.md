@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: bcb26f67-1934-4e93-91eb-0c79d77a7c03
-  modified: 2026-08-03T02:30:43.621Z
+  modified: 2026-08-10T02:30:47.790Z
 ---
 
 On this dim/noisy OBS source, `silencedetect` (noise=-30dB) marks a "gap" that is
@@ -82,6 +82,25 @@ silencedetect invents gaps inside words (edit-26) and misses real ones (edit-34)
 Scribe's word.end drifts both ways (edit-25/29/31). Cheap check: after building the
 EDL, diff the Scribe gap list against the silencedetect gap list and probe anything
 that appears in only one of them.
+
+**edit-37 — a stretched `word.end` erases the pause from the Scribe side too, so the
+"union" list silently loses it.** Three real pauses were missed at cut time and only
+caught by the Phase 6 gate, all with the same signature: the pause sat **inside** a
+Scribe word span, so it produced *no* Scribe word-to-word gap — and I then dismissed
+the silencedetect event by containment ("a word covers it → sub-word tail"), exactly
+the edit-31 error. Worst case: `with.` was reported as 35.54–**36.26** while the
+acoustic end is 35.61, hiding a **0.66 s** pause; `presentations.` hid 0.33 s and
+`structure.` hid 0.39 s. The same file also showed the overshoot at its most extreme —
+`possible.` reported to 15.12 against an acoustic end of **13.96**, a **1.16 s** stretch.
+So the union of the two candidate lists is NOT a safety net here: when Scribe stretches
+a phrase-final word across the pause, silencedetect is the *only* source that sees it,
+and containment is the *least* trustworthy reason to dismiss it — it is the signature
+of the failure, not evidence against it.
+
+**How to apply:** enumerate every silencedetect event ≥ ~0.28 s that falls inside a
+kept range and tick each one off explicitly with an RMS probe — containment by a Scribe
+word is not a disposition, it is a reason to probe. Do not filter the candidate list by
+word coverage at any point.
 
 **Why:** silencedetect's own boundaries are peak/threshold artifacts, not word edges;
 they drift INTO words (quiet consonant tails) and END early (breaths). Scribe word.start/
