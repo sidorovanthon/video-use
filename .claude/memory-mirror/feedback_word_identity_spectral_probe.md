@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: ba2b871a-2172-4df5-bcee-bd222cfe622f
-  modified: 2026-08-03T02:57:28.342Z
+  modified: 2026-08-10T01:33:00.341Z
 ---
 
 The RMS probe settles *silence vs speech*. A second class of SRT-gate mismatch is
@@ -69,12 +69,45 @@ in the same collocation at 1118-1394 = the same token. For the split, "there ?? 
 spanned **0.270 s** vs 0.300/0.330 s for two known `there's a` controls — an extra
 syllable cannot be *shorter*, so it is the contraction.
 
+**edit-36 — for a MIS-HEARD MULTI-WORD RUN, probe manner of articulation, not vowel
+identity.** Scribe returned `Cloud Caller Codex` where the script had `Claude Code or
+Codex` — three tokens against four, so no token-to-token formant comparison even lines
+up. Two structural reads settled it off one full-resolution `formant` pass (which also
+prints RMS):
+
+- **A stop closure proves a word/syllable boundary a continuant cannot.** `Caller`
+  requires a lateral /l/ between its two syllables; `Code or` requires the /d/ stop of
+  "Code". At 107.45–107.50 the track falls to **−45.1 dB for 50 ms** — a near-silent
+  closure. A lateral is a *continuant*: it never drops that far. That single dip
+  eliminates "Caller" without touching the vowels.
+- **Monophthong vs diphthong on F1/F2 trajectory.** `Claude` /ɔ/ holds F1 ≈ 505–568,
+  F2 ≈ 770–1030; `Cloud` /aʊ/ would open to F1 ≈ 700+ and glide F2 steadily *down*.
+  Observed F1 never exceeded 568 and F2 went down-then-up → monophthong → `Claude`.
+
+Same session, a second independent route to `engine`→`agent` (edit-33 used the
+word-final nasal-murmur test): read **F2 in the frame immediately before the /dʒ/
+affricate**, which the `sib` track locates exactly. `agent` /eɪdʒ/ puts the /eɪ/
+offglide there (in-file control "agent": F2 1849); `engine` /ɛndʒ/ puts a nasal /n/
+there (control "end": nasal F2 1332–1434). Disputed read 1834–1850 → `agent`. Locating
+the affricate with `sib` first is what makes this cheap — it removes the guesswork
+about where Scribe's token boundary actually sits.
+
+Also that session: `Glaido` vs Scribe's `Glider` is a **rhoticity** question, so read
+**F3**, not F1/F2 — the disputed final syllable held F3 2367–2432 against an /ər/
+control ("folders") at 1658–1839 and an /oʊ/ control ("go") at 2223–2429 → non-rhotic.
+And `preliminarily`→`preliminary` needed only durations: the token Scribe spelled with
+the extra syllable ran **0.60 s** while the *same speaker's* "preliminary" in the
+discarded retake of the same sentence ran 0.69 s — an added syllable cannot make the
+word 13 % shorter.
+
 **Direction of the fix is not fixed.** edit-34's five mismatches split 3 transcript-side
 (Scribe wrong: Coder, there is, the→a) and 2 script-side (Scribe right: in→on,
 this→the); edit-35's eight split the other way — 3 transcript-side (capabilities,
 Wispr Flow, Glaido) and **5 script-side**, with Scribe right on doesn't, use, the
-extra "the", patterns and something. Decide each one on its own measurement; see
-[[feedback_script_txt_reflects_shipped_adlib]].
+extra "the", patterns and something. edit-36 then went **7/0 transcript-side** — a
+clean sweep happens, so a run of same-direction fixes is not itself evidence you are
+rubber-stamping the script; each one there carried its own measurement. Decide each on
+its own; see [[feedback_script_txt_reflects_shipped_adlib]].
 
 **Why:** deciding these from context alone ("nobody says coding engine") is the
 guess the pipeline is supposed to eliminate — and the opposite mistake, assuming
