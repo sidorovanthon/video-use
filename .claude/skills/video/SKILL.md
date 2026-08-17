@@ -5,8 +5,8 @@ description: Start processing a new OBS talking-head video — /video <path to p
 
 # video — one path in, finished video out
 
-Replaces the hand-typed opener prompt. Input: one argument — the prep folder
-(`M:/videos/OBS/prep/<dated stem>/`) or the source mp4 inside it.
+Replaces the hand-typed opener prompt. Input: one argument — the monthly prep
+folder (`M:/videos/OBS/prep/YYYY-MM/<dated stem>/`) or a source video inside it.
 
 Canon: `docs/settings_reference.md` (this repo) — read it before cutting.
 Project memory (auto-loaded) holds the correction history; obey `feedback_*` rules.
@@ -62,8 +62,9 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
 
 ## Phase 2 — working dir
 
-Global numbering: find max `edit-*` N across `M:/videos/OBS/edit-*` AND
-`M:/videos/OBS/prep/*/edit-*`; create `<prep>/edit-(N+1)/` with
+Global numbering: find max `edit-*` N recursively across
+`M:/videos/OBS/prep/*/*/edit-*` (and any legacy `M:/videos/OBS/edit-*` left
+during migration); create `<prep>/edit-(N+1)/` with
 `transcripts/ clips_graded/ verify/`. Stage the transcript as
 `transcripts/S0.json` so the EDL key `S0` matches. Everything, including
 `final.mp4` + `final.srt`, stays inside this folder.

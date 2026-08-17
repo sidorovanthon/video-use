@@ -86,9 +86,23 @@ Two-pass loudnorm, social-media spec: `I=-14 LUFS, TP=-1 dBTP, LRA=11 LU, linear
 - **Always cross-check against the user's script if provided.** Known Scribe fixes on this subject: `CLOUD`→`CLAUDE`, `CO-WORK`→`COWORK`, `A-A-A`/`AA`→`AI`, tense/article slips ("run"→"ran"). Apply as plain `str.replace` on a filtered transcript COPY — never edit the cached transcript.
 - Burn-in spec, if ever wanted (9:16 safe-zone): FontName=Helvetica, FontSize=18, Bold=1, PrimaryColour=&H00FFFFFF, OutlineColour=&H00000000, BorderStyle=1, Outline=2, Shadow=0, Alignment=2, MarginV=90.
 
-## Output location (edit-16+ convention)
+## Output location (monthly prep convention)
 
-**The ENTIRE `edit-NN/` working folder lives INSIDE the source/prep folder**: `M:/videos/OBS/prep/<dated stem>/edit-NN/`. Everything — edl.json, working video, transcripts/, clips_graded/, verify/, master.srt, progress notes, AND deliverables `final.mp4` + `final.srt` — sits there. The prep folder root keeps only untouched originals (`<source>.mp4`, `isolated.mp3`, `transcript.json`). EDL `sources` paths are absolute with the prep stem. Numbering `edit-NN` is global across all videos.
+**Every video has one folder under its recording month**:
+`M:/videos/OBS/prep/YYYY-MM/<dated stem>/`. Both finished videos and the
+unprocessed queue use this layout. The ENTIRE `edit-NN/` working folder lives
+inside the video folder. Everything — edl.json, working video, transcripts/,
+clips_graded/, verify/, master.srt, progress notes, AND deliverables
+`final.mp4` + `final.srt` — sits there. The video-folder root keeps only
+untouched originals (`<source>.mp4`/`.mkv`, `isolated.mp3`,
+`transcript.json`) plus its `edit-NN/` folder when editing has started. EDL
+`sources` paths are absolute with the monthly prep path. Numbering `edit-NN`
+is global across all months, so discover the maximum recursively.
+
+If a monthly folder contains `_STATUS_EDITED_EXTERNALLY.md`, every video in
+that month is already finished in an external editor such as Adobe Premiere
+Pro. Exclude the whole month from transcription and editing queues regardless
+of whether its video folders contain `edit` or `edit-NN`.
 
 Pre-supplied `isolated.mp3` + `transcript.json` in the prep folder → do NOT re-run ElevenLabs; mux clean audio over video (`-c copy`) into `source_clean.mp4` and cut from that.
 

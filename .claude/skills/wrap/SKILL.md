@@ -86,9 +86,10 @@ Invoke the global `handoff-prompt` skill; note "instructions updated this sessio
 - **Grade is chosen by measurement, never inherited** — the prose rule failed on
   edit-19 AND edit-20 ("очевидно лицо пересвечено"); the mechanical gate is
   `helpers/grade_sheet.py` (scan + sheet) and an explicit user choice.
-- Working convention: the whole `edit-NN/` folder (incl. finals) lives inside
-  `M:/videos/OBS/prep/<stem>/`; `edit-NN` numbering is global (memory:
-  project-edit-dir-convention).
+- Working convention: every video folder lives at
+  `M:/videos/OBS/prep/YYYY-MM/<dated stem>/`, and the whole `edit-NN/` folder
+  (incl. finals) lives inside it. `edit-NN` numbering is global; scan the
+  monthly tree recursively.
 - Scribe timestamps lie at segment edges (onset tokens after silences, drifting
   word.end) — verify with silencedetect/waveform (memory: feedback-scribe-*).
 - Windows console is cp1251 — helpers now reconfigure stdout to UTF-8 themselves,
