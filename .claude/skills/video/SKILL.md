@@ -58,7 +58,57 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
   inside the Phase 2 edit dir**, so create that dir FIRST (do Phase 2 before the
   mux) — writing it to the prep-folder root leaves it in the wrong place and it
   must be moved (per the edit-dir convention, everything lives inside `edit-NN/`).
+- **No `isolated.mp3` → cut from the RAW source audio.** This is the default,
+  not a question to ask: no ElevenLabs Voice Isolation, no ffmpeg de-noise pass.
+  There is no isolation or de-noise helper in this repo — the
+  `helpers/isolate_and_transcribe.py` named in older memory is NOT here and never
+  appears in git history; do not go looking for it and do not build one. Still
+  produce `<edit>/source_clean.mp4` (mux source video + its own audio, `-c copy`)
+  so every downstream path is byte-identical to the isolated case, then run
+  **Phase 1b** — the dB thresholds must be recalibrated before any cutting.
 - Missing transcript → `helpers/transcribe.py` (Scribe; costs money — say so).
+
+## Phase 1b — noise-floor calibration (ONLY when cutting raw audio)
+
+Every dB threshold in Phases 3 and 6 was tuned on ElevenLabs-isolated audio,
+whose floor is near-digital silence. Raw OBS audio carries room tone, mic hiss
+and audible breaths: reusing the canned numbers makes `silencedetect` miss real
+pauses and makes the Phase 6 onset gate false-fire on every join. Measure the
+floor, then shift the thresholds by the measured delta — the same mechanism the
+loudnorm shift already uses (memory
+`feedback_loudnorm_shifts_silence_threshold`).
+
+1. **Measure the floor** on `source_clean.mp4` (never on `final.mp4` — loudnorm
+   has already moved it):
+   ```bash
+   ffmpeg -hide_banner -i "<edit>/source_clean.mp4" \
+     -af "astats=metadata=1:reset=1,ametadata=print:key=lavfi.astats.Overall.RMS_level" \
+     -f null - 2>&1 | grep RMS_level
+   ```
+   No `-v error` — astats logs at info level and `-v error` hides all of it
+   (memory `reference_ffmpeg_filter_loglevel`). Floor **F** = the 5th-percentile
+   RMS across the file (NOT the mean — speech dominates the mean); cross-check it
+   against 2–3 pauses you can point at in the Scribe word gaps.
+2. **Shift by `D = F − (−55)`** — how much louder this floor sits than an
+   isolated track. `D ≈ 0` on isolated audio, typically `D ≈ +10…+15 dB` on raw
+   OBS. Apply D to every level gate and record the shifted numbers in the edit
+   notes:
+
+   | Gate | Isolated | Raw |
+   |---|---|---|
+   | Phase 3 `silencedetect` noise | −35 dB | −35 + D |
+   | Phase 3 "RMS in the gap = still speech" | ≳ −30 dB | −30 + D |
+   | Phase 6 clean-onset ceiling | ≤ −35 dB | −35 + D |
+   | Phase 6 clipped-onset line | > −25 dB | −25 + D |
+
+   **Durations do NOT shift** — the ≥0.3 s split rule, the ~0.15 s residual and
+   the 0.12–0.22 s join window are time, not level.
+3. **Verify the shifted threshold before building the cut plan:** it must fire at
+   2–3 pauses that the Scribe word gaps in `takes_packed.md` independently show.
+   If it fires at none, the floor measurement is wrong — re-measure. Never nudge
+   the threshold by feel until events appear.
+4. Expect a noisier transcript: raw audio degrades Scribe, so more Phase 5 SRT
+   mismatches than usual is normal and is not a reason to re-cut.
 
 ## Phase 2 — working dir
 
@@ -70,6 +120,9 @@ during migration); create `<prep>/edit-(N+1)/` with
 `final.mp4` + `final.srt`, stays inside this folder.
 
 ## Phase 3 — cut plan
+
+**Levels below (`-35dB`, `−30 dB`) assume ISOLATED audio. On raw audio use the
+Phase 1b shifted values everywhere a dB number appears.**
 
 `helpers/pack_transcripts.py --edit-dir <edit>` → read `takes_packed.md`.
 Drop entirely: false starts / retakes (keep the clean retake) and any big
@@ -135,6 +188,9 @@ feedback-word-identity-spectral-probe). `cp master.srt final.srt`. The Phase 6 g
 mechanical backstop — run it (memory: feedback-srt-full-script-reconcile).
 
 ## Phase 6 — verify before declaring done
+
+**Same rule as Phase 3: the `−35`/`−25` onset lines below are isolated-audio
+numbers — on raw audio compare against the Phase 1b shifted values.**
 
 Frames at every join (no visible grade/exposure step), `silencedetect` on
 joins (~0.15 s), `r_frame_rate` = 60/1, loudness ≈ −14 LUFS. Show the user 2–3

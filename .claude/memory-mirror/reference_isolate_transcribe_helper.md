@@ -1,38 +1,30 @@
 ---
 name: reference-isolate-transcribe-helper
-description: video-use repo has helpers/isolate_and_transcribe.py — sequential ElevenLabs voice-isolation + Scribe over a directory of source videos
-metadata: 
-  node_type: memory
+description: helpers/isolate_and_transcribe.py DOES NOT EXIST in the video-use repo (not in the tree, not in git history) — only the ElevenLabs cost/quota facts below survive
+metadata:
   type: reference
-  originSessionId: 0a09b80d-e5f4-4418-aa75-ae91f8c33bd4
 ---
 
-`helpers/isolate_and_transcribe.py` in the video-use repo runs sequential ElevenLabs Voice Isolation and/or Scribe transcription over every video newer than a named start file in a source directory.
+**Status (verified 2026-08-17): the script is gone.** `helpers/isolate_and_transcribe.py`
+is NOT in the working tree and `git log --all -- helpers/isolate_and_transcribe.py`
+returns nothing — it was never committed to this fork, so it most likely died
+uncommitted in [[project-data-loss-2026-07]]. Do not reference it in a plan, do not
+go looking for it. There is no isolation and no de-noise tooling in the repo; a prep
+folder without `isolated.mp3` is cut raw ([[feedback-raw-audio-noise-floor]]).
+`helpers/transcribe.py` (single-file Scribe) and `helpers/transcribe_batch.py` do
+exist and are unrelated to isolation.
 
-Key behaviours:
-- Output layout: `<out_root>/YYYY-MM-DD [stem]/` containing the moved source file, `isolated.mp3`, `transcript.json`. Date prefix is derived from source mtime.
-- Dedups MP4+MKV pairs (prefers MP4).
-- Skips date-named (`YYYY-MM-DD HH-MM-SS.*`) and `Desktop 20*` files — those are failed-take dumps.
-- Resumable: each step checks for its output file and skips if cached. Safe to re-run.
-- Source files are MOVED into their prep subfolder (not copied) — user explicitly asked for this.
-- `--mode {transcribe,isolate,both}` — Phase 1 (transcribe-only) then Phase 2 (isolate-only) is the cheaper play if budget is tight, because Scribe is ~5× cheaper than the Voice Isolator.
-- Writes per-file results to `<out_root>/processing_log.jsonl`.
-- Stops cleanly on `quota_exceeded` / 402 / "insufficient" / "credit" / "quota" in the API error.
+The ElevenLabs facts it was written against are still true and are the reason to
+keep this file:
 
-Usage:
-```
-uv run helpers/isolate_and_transcribe.py <src_dir> \
-  --start "<stem of first file, no extension>" \
-  --out-root <prep_dir> \
-  --mode {transcribe|isolate|both}
-```
-
-Empirical cost on Creator plan (verified against `/v1/user/subscription` after a full 90.4-min batch):
-
-- Voice Isolator: **661 cred/min** (from quota_exceeded error text — same rate confirmed by workspace math)
-- Scribe v1: **20.15 cred/min exactly** (Creator plan), confirmed by two Scribe quota_exceeded API errors: "2651 cred for 131.5 min" → 20.16/min and "665 cred for 33.0 min" → 20.15/min. Use this rate for budgeting Doctor-School-style transcription batches.
-- Combined full pipeline: **~709 cred/min**
-
-API key needs **User → Read** scope for `/v1/user/subscription` to work; without it the script falls back to error-only credit detection.
-
-**Per-API-key Monthly cap is in the same Credits unit as workspace** (confirmed via the dashboard "Edit API Key → Usage Limits (Credits) → Monthly" field). The cap counts cumulative usage on that key for the month; when it shows e.g. "32 credits remaining of 15,000" that means 14,968 have been spent on this key this month total, not in the current batch. So if you see a quota_exceeded surprise early in a fresh run, the likely cause is prior month-to-date usage on that key, not the current run's spend. Read `/v1/user/subscription` for workspace cumulative usage and the dashboard for per-key cap before starting a large batch.
+- Voice Isolator ≈ **661 credits/min**; Scribe is ~5× cheaper, so transcribe-first
+  and isolate-later is the cheaper play when budget is tight.
+- API key needs **User → Read** scope for `/v1/user/subscription` to report
+  workspace usage; without it only error-text credit detection works.
+- The per-API-key Monthly cap is in the same Credits unit as the workspace figure
+  and counts cumulative month-to-date usage on that key. An early `quota_exceeded`
+  in a fresh run usually means prior month-to-date spend on the key, not this run.
+  Check `/v1/user/subscription` (workspace) AND the dashboard per-key cap before a
+  large batch.
+- Errors that mean stop, not retry: `quota_exceeded`, HTTP 402, or "insufficient" /
+  "credit" / "quota" in the message.

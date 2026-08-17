@@ -68,6 +68,8 @@ Apply the grade per-segment during extraction (Hard Rule — never post-concat, 
 
 ## Audio
 
+**Source track.** Pre-supplied `isolated.mp3` is the norm; when it is absent the pipeline cuts from the RAW source audio by default — no ElevenLabs Voice Isolation, no ffmpeg de-noise, and no such helper exists in this repo. The consequence is not audible, it is numeric: every dB gate downstream (`silencedetect` noise, the "still speech" RMS probe, the Phase 6 onset ceiling and clip line) was tuned on an isolated track whose floor is near-digital silence. Raw OBS audio sits ~10-15 dB above that. Measure the floor F (5th-percentile RMS on `source_clean.mp4`, astats at info level) and shift every level gate by `D = F - (-55)`; durations never shift. Procedure: `/video` Phase 1b.
+
 Two-pass loudnorm, social-media spec: `I=-14 LUFS, TP=-1 dBTP, LRA=11 LU, linear=true`. Typical source ≈ −26 LUFS → ~+12 dB gain. 30 ms `afade` in/out at every segment boundary (prevents pops). AAC 192 kbps stereo 48 kHz.
 
 ## Cuts
