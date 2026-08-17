@@ -29,3 +29,14 @@ shifted threshold fires at 2–3 pauses the Scribe word gaps independently show
 before cutting — never nudge it by feel ([[feedback-silencedetect-subword-edges]]).
 Expect more Phase 5 SRT-gate mismatches: raw audio degrades Scribe, that is normal,
 not a re-cut signal. Contrast with [[feedback-premade-isolated-audio]].
+
+**This user's OBS chain is gated at RECORDING, so D is 0 — do not assume +10…+15.**
+Measured on edit-40 (2026-05-28 shoot): 18 % of astats frames read a literal `-inf`
+and the 5th percentile sat at **−88.6 dB**, i.e. the floor is BELOW the −55 dB
+isolated reference, not above it. `D = F − (−55)` comes out negative; clamp it to 0
+and use the canonical gates unshifted. edit-39 (same shoot) reached the same
+conclusion. Only a raw floor that is genuinely HIGHER earns a positive shift — so
+always measure, but expect D = 0 on this setup and treat a large positive D as a
+reason to re-check the measurement. The verification in step 3 is what settles it:
+on edit-40 `-35 dB` put the first `silence_end` at 3.818 against Scribe's first
+word at 3.840, which is agreement to 22 ms.
