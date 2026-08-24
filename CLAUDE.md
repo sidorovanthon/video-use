@@ -32,8 +32,6 @@ videos (1080×1920@60). The general pipeline mechanics live in the root
   including `final.mp4` + `final.srt`, lives inside that video folder;
   `edit-NN` numbering is global. (Overrides root SKILL.md's
   `<videos_dir>/edit/` rule.)
-- For legacy Obsidian script notes without a date in the filename, use the
-  note file's filesystem `CreationTime` as the script date.
 - `_STATUS_EDITED_EXTERNALLY.md` marks videos whose `REC` month matches the
   marker's month as finished external edits (for example, Premiere Pro), even
   if script-date grouping places those video folders under another month.

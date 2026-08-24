@@ -21,6 +21,10 @@ from pathlib import Path
 
 DATE_RE = re.compile(r"^(?P<date>\d{4}-\d{2}-\d{2})(?P<rest>.*)$")
 MONTH_RE = re.compile(r"^\d{4}-\d{2}$")
+CANONICAL_RE = re.compile(
+    r"^(?P<script>\d{4}-\d{2}-\d{2})(?:-(?P<order>\d{2}))? - "
+    r"(?P<title>.+) \[REC (?P<recorded>\d{4}-\d{2}-\d{2})\]$"
+)
 WORD_RE = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?", re.IGNORECASE)
 VIDEO_EXTENSIONS = {".mkv", ".mp4", ".mov"}
 
@@ -82,10 +86,7 @@ def folder_video_time(folder: Path) -> float:
 
 
 def parse_old_folder(folder: Path) -> tuple[str, str]:
-    canonical = re.match(
-        r"^\d{4}-\d{2}-\d{2}(?:-\d{2})? - (?P<title>.+) \[REC (?P<recorded>\d{4}-\d{2}-\d{2})\]$",
-        folder.name,
-    )
+    canonical = CANONICAL_RE.match(folder.name)
     if canonical:
         return canonical.group("recorded"), canonical.group("title")
     match = DATE_RE.match(folder.name)
@@ -184,8 +185,23 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
     if not notes:
         raise RuntimeError(f"No dated Markdown notes found under {posts_root}")
 
-    raw_matches: list[tuple[Path, str, str, str, Note | None, float, float, str, Note]] = []
+    plan: list[PlanItem] = []
+    legacy_folders: list[Path] = []
     for folder in discover_folders(prep_root):
+        canonical = CANONICAL_RE.match(folder.name)
+        if not canonical:
+            legacy_folders.append(folder)
+            continue
+        protected = os.path.normcase(str(folder.resolve())) in protected_paths
+        order_text = canonical.group("order")
+        plan.append(PlanItem(
+            str(folder), None, canonical.group("recorded"), None,
+            canonical.group("script"), int(order_text) if order_text else 1,
+            1.0, 0.0, "high", protected, "already canonical",
+        ))
+
+    raw_matches: list[tuple[Path, str, str, str, Note | None, float, float, str, Note]] = []
+    for folder in legacy_folders:
         recording_date, title = parse_old_folder(folder)
         transcript = read_transcript(folder)
         ranked = sorted(((score_note(title, transcript, note), note) for note in notes), reverse=True, key=lambda x: x[0])
@@ -227,7 +243,6 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
         for index, row in enumerate(ordered, start=1):
             script_order[str(row[0]).lower()] = (index, len(ordered))
 
-    plan: list[PlanItem] = []
     for folder, recording_date, title, _transcript, note, best, second, confidence, candidate_note in raw_matches:
         protected = os.path.normcase(str(folder.resolve())) in protected_paths
         order = script_order.get(str(folder).lower())
@@ -252,7 +267,7 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
         plan.append(PlanItem(str(folder), str(destination), recording_date, str(note.path), note.date,
                              order[0] if order else 1,
                              best, second, confidence, False, reason))
-    return plan
+    return sorted(plan, key=lambda item: item.source.lower())
 
 
 def preflight(plan: list[PlanItem], prep_root: Path) -> None:
