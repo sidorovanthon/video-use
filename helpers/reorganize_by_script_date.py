@@ -67,6 +67,9 @@ def read_transcript(folder: Path) -> str:
         payload = read_json(transcript)
         if isinstance(payload, dict) and isinstance(payload.get("text"), str):
             return payload["text"]
+    packed = sorted(folder.rglob("takes_packed.md"))
+    if packed:
+        return packed[0].read_text(encoding="utf-8-sig", errors="replace")
     return ""
 
 
@@ -148,14 +151,25 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
         ranked = sorted(((score_note(title, transcript, note), note) for note in notes), reverse=True, key=lambda x: x[0])
         best_score, best_note = ranked[0]
         second_score = ranked[1][0] if len(ranked) > 1 else 0.0
-        confidence = confidence_for(best_score, second_score)
+        title_normalized = normalize(title)
+        literal_matches = [note for note in notes if title_normalized and title_normalized in note.normalized_text]
+        if len(literal_matches) == 1:
+            best_note = literal_matches[0]
+            best_score = score_note(title, transcript, best_note)
+            second_score = max((score_note(title, transcript, note) for note in notes if note != best_note), default=0.0)
+            confidence = "high"
+        else:
+            confidence = confidence_for(best_score, second_score)
         if confidence == "review":
+            candidate_note = best_note
             best_note = None
-        raw_matches.append((folder, recording_date, title, best_note, best_score, second_score, confidence))
+        else:
+            candidate_note = best_note
+        raw_matches.append((folder, recording_date, title, best_note, best_score, second_score, confidence, candidate_note))
 
     # More than one capture can belong to one script. Keep the folders separate
     # and add deterministic TAKE numbers in recording order.
-    groups: dict[str, list[tuple[Path, str, str, Note | None, float, float, str]]] = {}
+    groups: dict[str, list[tuple[Path, str, str, Note | None, float, float, str, Note]]] = {}
     for row in raw_matches:
         note = row[3]
         if note is not None:
@@ -169,7 +183,7 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
             take_number[str(row[0]).lower()] = (index, len(ordered))
 
     plan: list[PlanItem] = []
-    for folder, recording_date, _title, note, best, second, confidence in raw_matches:
+    for folder, recording_date, _title, note, best, second, confidence, candidate_note in raw_matches:
         protected = os.path.normcase(str(folder.resolve())) in protected_paths
         if protected:
             plan.append(PlanItem(str(folder), None, recording_date, str(note.path) if note else None,
@@ -177,7 +191,7 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
                                  "explicitly protected active edit"))
             continue
         if note is None:
-            plan.append(PlanItem(str(folder), None, recording_date, None, None, best, second,
+            plan.append(PlanItem(str(folder), None, recording_date, str(candidate_note.path), candidate_note.date, best, second,
                                  "review", False, "ambiguous or low-confidence match"))
             continue
 
