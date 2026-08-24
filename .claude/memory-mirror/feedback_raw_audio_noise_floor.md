@@ -40,3 +40,5 @@ always measure, but expect D = 0 on this setup and treat a large positive D as a
 reason to re-check the measurement. The verification in step 3 is what settles it:
 on edit-40 `-35 dB` put the first `silence_end` at 3.818 against Scribe's first
 word at 3.840, which is agreement to 22 ms.
+
+**2026-08-24 — edit-42: D can come out NEGATIVE; clamp it to 0, never shift a gate downward.** This raw OBS track ("I can't believe what just happened", no isolated.mp3) measured a 5th-percentile RMS of **−94.5 dB** with 1557 of 6740 astats frames at literal −inf — a noise gate / suppression filter was enabled in OBS, so the floor sat *below* an ElevenLabs-isolated track's, not above it. The formula gives D = −94.5 − (−55) = **−39.5 dB**; applying it would have pushed `silencedetect` to −74.5 dB and found nothing. Raw does NOT imply a raised floor — **measure first, then use `D = max(0, F − (−55))`** and run the canned −35/−30/−35/−25 gates unchanged when the floor is already at or below −55. Verified the usual way: −35 dB/0.20 fired at 43 events that matched the Scribe word gaps, and all 10 ambiguous windows probed −51…−60 dB against −20 dB speech.
