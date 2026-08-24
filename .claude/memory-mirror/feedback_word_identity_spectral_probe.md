@@ -132,3 +132,17 @@ Related: [[feedback_silencedetect_subword_edges]],
 **2026-08-24 — edit-43: the a/the dispute is settled by a CONSTRICTION DIP, not by formants.** A fully reduced `a` (/ə/) and `the` (/ðə/) share the same schwa, so F1/F2 overlap completely and the LPC track is inconclusive — on the disputed 40 ms token in "not sitting on ? surface" it read F1 511→393 / F2 1379→1442, sitting squarely between the `a` controls (F2 1167–1547) and the `the` controls (F2 1338–1634). What separates them is the **/ð/ itself**: a voiced dental fricative is a constriction, so it prints a local **RMS dip** between the preceding sound and the schwa, while a bare `a` does not. Read a 10 ms-resolution `rms` track across the boundary against a control in the SAME environment — here `down|the` at 51.38–51.52 dips to **−33.7 dB** before rising to −27.0, whereas the disputed `on|?` holds a flat **−29 dB plateau** from 43.84 to 43.90 and then rises smoothly into "surface". No dip = no /ð/ = `a`. Pick the control by the preceding segment (a nasal before a nasal, a vowel before a vowel), because the dip depth is relative to what precedes it.
 
 Same session, two cheaper reads worth reusing: **on vs of** is a sustained low-F1 nasal murmur (F1 held at 271–283 with F2 ≈ 1000 and RMS flat at −30 dB for 60 ms) versus an immediate erratic decay for /v/ (F1 jumping 523→352→757→1074 as RMS falls −30→−41); and **this vs these** is settled by matching the whole disputed track to a control of the same word in the identical environment — `this out` at 191.12 matched `this out` at 194.00 frame-for-frame (F1 375/391, F2 1565/1586, same three-frame decay, ~0.15 s) while the real `these things` control at 133.54 ran 0.24 s with sustained voicing and a RISING F2. A same-word, same-neighbour control beats any threshold.
+
+**2026-08-24 — edit-44: the constriction-dip test works in BOTH directions; it is a real test, not a way to always answer `a`.** Same dispute shape as edit-43 ("right at the start of ? session", script said `a`, Scribe said `the`) but the opposite verdict, because the dip was there. Two **exactly matched** controls existed in the same file — `of the same` at 14.90 and at 31.84, i.e. the same preceding `of` /v/ — and all three tracks share one structure: a /v/+/ð/ constriction trough, then the schwa peak ~50 ms later.
+
+| token | trough | schwa peak | depth |
+|---|---|---|---|
+| `of the same` @14.99 | −40.1 dB | −29.3 dB | 10.8 dB |
+| `of the same` @31.91 | −39.5 dB | −30.0 dB | 9.5 dB |
+| disputed `of ? session` @60.68 | −37.9 dB | −30.2 dB | 7.7 dB |
+
+The trough also has to be WIDE enough for two consonants: below −35 dB for 40/70/50 ms respectively. A bare `of a` would show one /v/ constriction, not a 50 ms merged one. Verdict `the` → the mismatch is **script-side** ([[feedback_script_txt_reflects_shipped_adlib]]).
+
+Two mechanical warnings from the same probe:
+- **`sib` is the wrong mode for an article before a sibilant.** Running `sib` over the disputed window returned 0.99 across most frames — that is the /s/ of "session", not the article. The article is entirely inside the frames BEFORE the sib fraction lifts; use `rms` at 10 ms and locate the article by the trough-then-peak shape.
+- **Duration alone decides nothing.** Scribe's own token lengths here were `the`=80/100/120 ms and `a`=140/10 ms — the two classes overlap completely, and the 140 ms `a` window was mostly the following /t/ closure.
