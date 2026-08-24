@@ -28,3 +28,5 @@ helper that shells out to them (render.py, grade_sheet.py scan/sheet — their
 subprocess inherits the shell PATH). Do NOT waste the
 [[reference_video_use_settings]] freshness gate re-discovering this each session,
 and do NOT trust any version-numbered path from memory — glob it live.
+
+**Mapped-drive spelling (2026-08-24):** the Bash tool's MSYS paths (`/m/videos/...`) work for `ls`/`cp`/`mkdir` but **ffmpeg and ffprobe cannot open them** — they fail with "No such file or directory" on a path that `ls` just listed. ffmpeg is a native Windows binary and needs the drive-letter form `M:/videos/OBS/prep/...`. The same applies to every helper that passes a path through to ffmpeg (`render.py`, `grade_sheet.py`, `pack_transcripts.py --edit-dir`, `word_probe.py`, `diff_srt_script.py`). Use `M:/...` in every tool argument; `/m/...` is fine only for plain shell file operations. Matches the `helpers/transcribe.py` fix "keep mapped-drive spelling in CLI paths".
