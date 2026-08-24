@@ -30,6 +30,20 @@ import requests
 SCRIBE_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 
 
+def resolve_cli_path(path: Path) -> Path:
+    """Make a CLI path absolute without expanding mapped drives to UNC paths.
+
+    ``Path.resolve()`` turns an ``M:`` path into its longer UNC spelling on
+    Windows.  Deep prep folders can then cross the legacy MAX_PATH boundary.
+    Preserve an explicit Windows extended-length path and otherwise use
+    ``abspath``, which keeps the mapped-drive spelling.
+    """
+    raw = os.fspath(path)
+    if os.name == "nt" and raw.startswith("\\\\?\\"):
+        return path
+    return Path(os.path.abspath(raw))
+
+
 def load_api_key() -> str:
     for candidate in [Path(__file__).resolve().parent.parent / ".env", Path(".env")]:
         if candidate.exists():
@@ -155,11 +169,11 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    video = args.video.resolve()
+    video = resolve_cli_path(args.video)
     if not video.exists():
         sys.exit(f"video not found: {video}")
 
-    edit_dir = (args.edit_dir or (video.parent / "edit")).resolve()
+    edit_dir = resolve_cli_path(args.edit_dir or (video.parent / "edit"))
     api_key = load_api_key()
 
     transcribe_one(
