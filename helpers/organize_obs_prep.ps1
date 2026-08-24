@@ -73,6 +73,20 @@ if (-not (Test-Path -LiteralPath $yearRoot -PathType Container)) {
     throw "Year root not found: $yearRoot"
 }
 
+# This helper implements the legacy recording-date layout. Fail closed once
+# the script-date convention is present; use reorganize_by_script_date.py for
+# the current layout instead of mixing the two migration schemes.
+$scriptDatedFolders = @(Get-ChildItem -LiteralPath $prepRoot -Directory | Where-Object {
+    $_.Name -match '^\d{4}-\d{2}$'
+} | ForEach-Object {
+    Get-ChildItem -LiteralPath $_.FullName -Directory | Where-Object {
+        $_.Name -match '\[REC \d{4}-\d{2}-\d{2}\]$'
+    }
+})
+if ($scriptDatedFolders.Count -gt 0) {
+    throw 'Script-date prep folders already exist. Use helpers/reorganize_by_script_date.py; the legacy organizer is disabled.'
+}
+
 $moves = [System.Collections.Generic.List[object]]::new()
 $replacements = [System.Collections.Generic.List[object]]::new()
 $targetsByStem = @{}

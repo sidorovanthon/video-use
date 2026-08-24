@@ -21,14 +21,22 @@ videos (1080×1920@60). The general pipeline mechanics live in the root
 
 ## Hard local rules
 
-- Working dir convention: every video lives under its recording month at
-  `M:/videos/OBS/prep/YYYY-MM/<dated stem>/`. The WHOLE `edit-NN/` folder,
+- Working dir convention: every video lives under its script month at
+  `M:/videos/OBS/prep/YYYY-MM/YYYY-MM-DD[-NN] - <title> [REC YYYY-MM-DD]/`.
+  The leading date and optional sequence are the script chronology; `REC` is
+  the recording date. `<title>` is truncated to ~22 chars with a trailing
+  `...` — resolve folders by the date prefix, never by full title. Script-date
+  grouping means the month folder ≠ the REC month and `edit-NN` numbering no
+  longer runs in month order. Active jobs may temporarily retain the legacy
+  `YYYY-MM-DD <title>` recording-date name until their edit is complete. The WHOLE `edit-NN/` folder,
   including `final.mp4` + `final.srt`, lives inside that video folder;
   `edit-NN` numbering is global. (Overrides root SKILL.md's
   `<videos_dir>/edit/` rule.)
-- A month containing `_STATUS_EDITED_EXTERNALLY.md` is a finished external-edit
-  archive (for example, Premiere Pro), not part of the transcription or
-  video-use editing queue, even when individual video folders have no `edit-*`.
+- For legacy Obsidian script notes without a date in the filename, use the
+  note file's filesystem `CreationTime` as the script date.
+- `_STATUS_EDITED_EXTERNALLY.md` marks videos whose `REC` month matches the
+  marker's month as finished external edits (for example, Premiere Pro), even
+  if script-date grouping places those video folders under another month.
 - Grade is chosen by measurement via `helpers/grade_sheet.py` (scan → sheet →
   explicit user choice). Never auto-ship a previous part's grade.
 - Pre-made `isolated.mp3` + `transcript.json` in the prep folder → never re-run

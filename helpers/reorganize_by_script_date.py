@@ -41,6 +41,7 @@ class PlanItem:
     recording_date: str
     script_note: str | None
     script_date: str | None
+    script_order: int | None
     score: float
     runner_up_score: float
     confidence: str
@@ -81,6 +82,12 @@ def folder_video_time(folder: Path) -> float:
 
 
 def parse_old_folder(folder: Path) -> tuple[str, str]:
+    canonical = re.match(
+        r"^\d{4}-\d{2}-\d{2}(?:-\d{2})? - (?P<title>.+) \[REC (?P<recorded>\d{4}-\d{2}-\d{2})\]$",
+        folder.name,
+    )
+    if canonical:
+        return canonical.group("recorded"), canonical.group("title")
     match = DATE_RE.match(folder.name)
     if not match:
         raise ValueError(f"Unexpected prep folder name: {folder}")
@@ -132,6 +139,39 @@ def confidence_for(best: float, second: float) -> str:
     return "review"
 
 
+def match_position(title: str, transcript: str, note: Note) -> int:
+    title_normalized = normalize(title)
+    if title_normalized:
+        position = note.normalized_text.find(title_normalized)
+        if position >= 0:
+            return position
+    words = normalize(transcript).split()
+    for width in range(min(12, len(words)), 4, -1):
+        positions: list[int] = []
+        for start in range(0, len(words) - width + 1):
+            phrase = " ".join(words[start:start + width])
+            position = note.normalized_text.find(phrase)
+            if position >= 0:
+                positions.append(position)
+        if positions:
+            return min(positions)
+    return sys.maxsize
+
+
+def note_display_title(note: Note, order: tuple[int, int] | None) -> str:
+    match = DATE_RE.match(note.stem)
+    remainder = match.group("rest").strip() if match else ""
+    remainder = re.sub(r"^[-–—]\s*", "", remainder).strip()
+    if not remainder:
+        remainder = f"Video {order[0]:02d}" if order and order[1] > 1 else "Video"
+    # OBS source filenames can already be very long. Keeping the folder's
+    # human-readable segment compact prevents the duplicated title from
+    # crossing the classic Windows MAX_PATH boundary.
+    if len(remainder) > 24:
+        return remainder[:21].rstrip() + "..."
+    return remainder
+
+
 def discover_folders(prep_root: Path) -> list[Path]:
     folders: list[Path] = []
     for month in sorted(p for p in prep_root.iterdir() if p.is_dir() and MONTH_RE.match(p.name)):
@@ -144,7 +184,7 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
     if not notes:
         raise RuntimeError(f"No dated Markdown notes found under {posts_root}")
 
-    raw_matches: list[tuple[Path, str, str, Note | None, float, float, str]] = []
+    raw_matches: list[tuple[Path, str, str, str, Note | None, float, float, str, Note]] = []
     for folder in discover_folders(prep_root):
         recording_date, title = parse_old_folder(folder)
         transcript = read_transcript(folder)
@@ -165,43 +205,52 @@ def build_plan(prep_root: Path, posts_root: Path, protected_paths: set[str]) -> 
             best_note = None
         else:
             candidate_note = best_note
-        raw_matches.append((folder, recording_date, title, best_note, best_score, second_score, confidence, candidate_note))
+        raw_matches.append((folder, recording_date, title, transcript, best_note, best_score, second_score, confidence, candidate_note))
 
     # More than one capture can belong to one script. Keep the folders separate
     # and add deterministic TAKE numbers in recording order.
-    groups: dict[str, list[tuple[Path, str, str, Note | None, float, float, str, Note]]] = {}
+    groups: dict[str, list[tuple[Path, str, str, str, Note | None, float, float, str, Note]]] = {}
     for row in raw_matches:
-        note = row[3]
+        note = row[4]
         if note is not None:
             groups.setdefault(str(note.path).lower(), []).append(row)
-    take_number: dict[str, tuple[int, int]] = {}
+    script_order: dict[str, tuple[int, int]] = {}
     for rows in groups.values():
-        if len(rows) <= 1:
-            continue
-        ordered = sorted(rows, key=lambda row: (folder_video_time(row[0]), str(row[0]).lower()))
+        ordered = sorted(
+            rows,
+            key=lambda row: (
+                match_position(row[2], row[3], row[4]),
+                folder_video_time(row[0]),
+                str(row[0]).lower(),
+            ),
+        )
         for index, row in enumerate(ordered, start=1):
-            take_number[str(row[0]).lower()] = (index, len(ordered))
+            script_order[str(row[0]).lower()] = (index, len(ordered))
 
     plan: list[PlanItem] = []
-    for folder, recording_date, _title, note, best, second, confidence, candidate_note in raw_matches:
+    for folder, recording_date, title, _transcript, note, best, second, confidence, candidate_note in raw_matches:
         protected = os.path.normcase(str(folder.resolve())) in protected_paths
+        order = script_order.get(str(folder).lower())
         if protected:
             plan.append(PlanItem(str(folder), None, recording_date, str(note.path) if note else None,
-                                 note.date if note else None, best, second, confidence, True,
+                                 note.date if note else None, order[0] if order else None,
+                                 best, second, confidence, True,
                                  "explicitly protected active edit"))
             continue
         if note is None:
-            plan.append(PlanItem(str(folder), None, recording_date, str(candidate_note.path), candidate_note.date, best, second,
+            plan.append(PlanItem(str(folder), None, recording_date, str(candidate_note.path), candidate_note.date, None,
+                                 best, second,
                                  "review", False, "ambiguous or low-confidence match"))
             continue
 
-        suffix = f" [REC {recording_date}]"
-        take = take_number.get(str(folder).lower())
-        if take:
-            suffix += f" [TAKE {take[0]:02d}]"
-        destination = prep_root / note.date[:7] / f"{note.stem}{suffix}"
+        sort_key = note.date
+        if order and order[1] > 1:
+            sort_key += f"-{order[0]:02d}"
+        display_title = note_display_title(note, order)
+        destination = prep_root / note.date[:7] / f"{sort_key} - {display_title} [REC {recording_date}]"
         reason = "matched by transcript and title"
         plan.append(PlanItem(str(folder), str(destination), recording_date, str(note.path), note.date,
+                             order[0] if order else 1,
                              best, second, confidence, False, reason))
     return plan
 
@@ -263,15 +312,33 @@ def validate_edls(prep_root: Path) -> list[dict[str, str]]:
     return broken
 
 
+def broken_edl_signature(row: dict[str, str]) -> tuple[str, str, str, str]:
+    edl = Path(row["edl"])
+    edit_parent = next((part for part in reversed(edl.parts[:-1]) if re.match(r"^edit-\d+$", part)), "")
+    return edit_parent, edl.name, row["key"], Path(row["source"]).name
+
+
 def apply_plan(plan: list[PlanItem], prep_root: Path) -> tuple[list[dict[str, object]], list[dict[str, str]]]:
     completed: list[dict[str, object]] = []
-    for item in [row for row in plan if row.destination]:
-        source = Path(item.source)
-        destination = Path(item.destination or "")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source), str(destination))
-        updated_edls = replace_edl_paths(destination, str(source), str(destination))
-        completed.append({"source": str(source), "destination": str(destination), "updated_edls": updated_edls})
+    try:
+        for item in [row for row in plan if row.destination]:
+            source = Path(item.source)
+            destination = Path(item.destination or "")
+            if source.resolve() == destination.resolve():
+                continue
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(destination))
+            updated_edls = replace_edl_paths(destination, str(source), str(destination))
+            completed.append({"source": str(source), "destination": str(destination), "updated_edls": updated_edls})
+    except Exception:
+        for move in reversed(completed):
+            source = Path(str(move["source"]))
+            destination = Path(str(move["destination"]))
+            if destination.exists() and not source.exists():
+                replace_edl_paths(destination, str(destination), str(source))
+                source.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(destination), str(source))
+        raise
     return completed, validate_edls(prep_root)
 
 
@@ -301,15 +368,23 @@ def main() -> int:
     }
     output: dict[str, object] = {"summary": summary, "plan": [asdict(item) for item in plan]}
     if args.apply:
+        baseline_broken = validate_edls(args.prep_root)
         completed, broken = apply_plan(plan, args.prep_root)
         output["completed_moves"] = completed
+        output["baseline_broken_edl_sources"] = baseline_broken
         output["broken_edl_sources"] = broken
     args.plan.parent.mkdir(parents=True, exist_ok=True)
     args.plan.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"Plan written to {args.plan.resolve()}")
-    if args.apply and output.get("broken_edl_sources"):
-        print("Migration completed, but EDL validation found broken sources.", file=sys.stderr)
+    if args.apply:
+        baseline_keys = {broken_edl_signature(row) for row in output["baseline_broken_edl_sources"]}
+        new_broken = [row for row in output["broken_edl_sources"]
+                      if broken_edl_signature(row) not in baseline_keys]
+        output["new_broken_edl_sources"] = new_broken
+        args.plan.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.apply and output.get("new_broken_edl_sources"):
+        print("Migration completed, but EDL validation found newly broken sources.", file=sys.stderr)
         return 2
     return 0
 

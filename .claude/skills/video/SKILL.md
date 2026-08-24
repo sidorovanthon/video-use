@@ -6,7 +6,10 @@ description: Start processing a new OBS talking-head video — /video <path to p
 # video — one path in, finished video out
 
 Replaces the hand-typed opener prompt. Input: one argument — the monthly prep
-folder (`M:/videos/OBS/prep/YYYY-MM/<dated stem>/`) or a source video inside it.
+folder (`M:/videos/OBS/prep/YYYY-MM/YYYY-MM-DD[-NN] - <title> [REC YYYY-MM-DD]/`)
+or a source video inside it. The month is the SCRIPT month, `REC` the recording
+date, and `<title>` is truncated to ~22 chars with a trailing `...` — resolve a
+folder by its date prefix, never by full title.
 
 Canon: `docs/settings_reference.md` (this repo) — read it before cutting.
 Project memory (auto-loaded) holds the correction history; obey `feedback_*` rules.

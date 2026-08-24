@@ -87,7 +87,8 @@ Invoke the global `handoff-prompt` skill; note "instructions updated this sessio
   edit-19 AND edit-20 ("очевидно лицо пересвечено"); the mechanical gate is
   `helpers/grade_sheet.py` (scan + sheet) and an explicit user choice.
 - Working convention: every video folder lives at
-  `M:/videos/OBS/prep/YYYY-MM/<dated stem>/`, and the whole `edit-NN/` folder
+  `M:/videos/OBS/prep/YYYY-MM/YYYY-MM-DD[-NN] - <title> [REC YYYY-MM-DD]/`
+  (script month, truncated title), and the whole `edit-NN/` folder
   (incl. finals) lives inside it. `edit-NN` numbering is global; scan the
   monthly tree recursively.
 - Scribe timestamps lie at segment edges (onset tokens after silences, drifting

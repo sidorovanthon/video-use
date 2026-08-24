@@ -90,8 +90,17 @@ Two-pass loudnorm, social-media spec: `I=-14 LUFS, TP=-1 dBTP, LRA=11 LU, linear
 
 ## Output location (monthly prep convention)
 
-**Every video has one folder under its recording month**:
-`M:/videos/OBS/prep/YYYY-MM/<dated stem>/`. Both finished videos and the
+**Every video has one folder under its SCRIPT month**:
+`M:/videos/OBS/prep/YYYY-MM/YYYY-MM-DD[-NN] - <title> [REC YYYY-MM-DD]/`.
+The leading `YYYY-MM-DD[-NN]` is the script/publication chronology (the `-NN`
+orders several videos written for the same script date); `[REC YYYY-MM-DD]` is
+the recording date. The `<title>` part is TRUNCATED to ~22 chars with a
+trailing `...` (`Организация базы знан...`), so never match a folder by full
+title — glob the date prefix. Because grouping is by script date, the month
+folder does NOT match the REC month and `edit-NN` numbering no longer runs in
+month order (edit-28..30 sit under `2026-03`, edit-39..42 under `2026-04`).
+Active jobs may temporarily keep the legacy `YYYY-MM-DD <title>`
+recording-date name until their edit is finished. Both finished videos and the
 unprocessed queue use this layout. The ENTIRE `edit-NN/` working folder lives
 inside the video folder. Everything — edl.json, working video, transcripts/,
 clips_graded/, verify/, master.srt, progress notes, AND deliverables
@@ -101,10 +110,12 @@ untouched originals (`<source>.mp4`/`.mkv`, `isolated.mp3`,
 `sources` paths are absolute with the monthly prep path. Numbering `edit-NN`
 is global across all months, so discover the maximum recursively.
 
-If a monthly folder contains `_STATUS_EDITED_EXTERNALLY.md`, every video in
-that month is already finished in an external editor such as Adobe Premiere
-Pro. Exclude the whole month from transcription and editing queues regardless
-of whether its video folders contain `edit` or `edit-NN`.
+If a monthly folder contains `_STATUS_EDITED_EXTERNALLY.md`, it marks the
+videos whose **`REC` month equals that marker's month** as already finished in
+an external editor such as Adobe Premiere Pro — NOT every folder physically
+sitting in the month (script-date grouping puts foreign-REC videos there too).
+Exclude those from transcription and editing queues regardless of whether they
+contain `edit` or `edit-NN`.
 
 Pre-supplied `isolated.mp3` + `transcript.json` in the prep folder → do NOT re-run ElevenLabs; mux clean audio over video (`-c copy`) into `source_clean.mp4` and cut from that.
 
