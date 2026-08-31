@@ -30,3 +30,11 @@ Confirmed three times running: Part 1 = edit-28 (raw ~66–69), Part 2 = edit-29
 been dim + uniform → single v7-contrast, no per-segment gamma.
 
 Third confirmation (2026-08-17, edit-39 "Superpowers", a standalone AI-tips video, not this series): raw face YAVG 65-74 — dim by the decision rule — and the user again picked v7-contrast (face crop 48.5) over all three lift variants, and declined per-segment gamma match on a 7-unit front-to-back drift. So "dim source" is a prior about which grades to SHOW, never a prediction of the pick.
+
+**Streak broken (2026-08-31, edit-47 "Handoff prompt", standalone AI-tips video).**
+After ten consecutive v7-contrast picks the user chose **v7-lift58**. The source was
+the dimmest yet — raw face YAVG **51.0–56.3**, spread only 4.8 — and v7-contrast
+crushed the crop to **30.9** against lift52/58/66 at 54.8/55.4/56.3. So the rule is
+neither "dim → lift" nor "always contrast": on a source this dark v7-contrast has no
+headroom left, and the pick swings back to lift. Keep showing the full 5-up sheet and
+keep asking; never carry a streak forward as a decision.
