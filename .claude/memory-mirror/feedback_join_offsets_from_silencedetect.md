@@ -30,4 +30,15 @@ probe relative to the reported `silence_end`, or find the exact splice by scanni
 for the −100 dB digital-silence frame. If a join does read hot, re-probe it with a
 0.2 s lead-in RMS track before concluding anything: a real clipped onset starts hot
 with no preceding decay, a false one sits on the tail of the previous segment.
-Related: [[feedback_silencedetect_subword_edges]].
+**edit-46 — the mirror failure, a false FAIL.** Joins located by summing EDL
+durations and matched to the nearest coalesced `silencedetect` event by midpoint
+distance: 14 of 15 matched right, but join 14 latched onto a **0.083 s event that
+was the /t/ closure INSIDE "next."** (midpoint 0.096 s away) instead of the real
+join 0.132 s away, and reported `w=0.083 → FAIL`. Nothing was wrong with the cut.
+
+**The splice notch is the unambiguous join marker.** A concat point in `base.mp4`
+prints a frame at near-digital silence (−100…−200 dB) that no intra-word closure
+ever reaches — the /t/ closure floored at −52 dB, the real join at −200 dB. When a
+join fails the width gate, RMS-track it and look for the notch before touching an
+edge. Related: [[feedback_silencedetect_subword_edges]],
+[[feedback_merge_contiguous_silence_events]].
