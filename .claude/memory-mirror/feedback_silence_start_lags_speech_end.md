@@ -36,3 +36,15 @@ edge fades. **A join reading ≥ ~0.25 s means the anchor lagged**: re-place tha
 from an RMS probe as `true speech end + 0.075` / `true speech start − 0.075`,
 reading "true" as the last frame above about −40 dB, and re-render. On edit-40 that
 took the two bad joins to 0.177 s and 0.207 s.
+
+**2026-08-31 — edit-45: the lag can be 0.36 s, and the join gate can hide it.** At
+the `used?` → `Claude and Codex` join, `silencedetect` reported
+`silence_start: 168.88` while a 20 ms RMS track put the true acoustic end of "used?"
+at **168.52** (−26.3 dB at 168.49, −46.9 dB by 168.53) — a **0.36 s** lag, 4× the
+0.09 s seen on edit-40. The pads then shipped **0.52 s** of dead air. It survived
+the automated check because `silencedetect` fragmented that one quiet span into
+three touching events and the gate read the nearest fragment (0.148 s) as the
+residual — see [[feedback-merge-contiguous-silence-events]]. Fixed by re-placing
+the segment end at `true speech end + 0.10` = 168.62; the join re-rendered to
+0.173 s. Corollary: a join that reads *comfortably* inside 0.12–0.22 s is only
+trustworthy once the event list has been coalesced.

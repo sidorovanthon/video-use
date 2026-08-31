@@ -220,6 +220,16 @@ before the user did; run it, do not ship on faith):**
 - **Tail (overshoot) check:** `silencedetect` residual at each join should be
   ~0.12–0.22 s. **> ~0.25 s = a Scribe `word.end` overshoot left a pause** → pull
   that end back to the acoustic `silence_start + 0.10` and re-render.
+  **COALESCE the event list first — merge any two intervals less than ~0.03 s
+  apart into one — before matching events to joins.** `silencedetect` re-arms on a
+  single supra-threshold sample, so one long dead-air join is reported as a chain
+  of touching intervals; matching the nearest fragment always reads SHORTER than
+  the truth, so this failure mode is a false PASS by construction. On edit-45 a
+  0.52 s dead-air join passed as 0.148 s that way, because `silence_start` lagged
+  the true speech end by 0.36 s. Any join matched from a merged run gets a 20 ms
+  RMS track across it, and the edge is re-placed from that track (true speech end
+  + 0.10), never from the reported `silence_start` (memory:
+  feedback-merge-contiguous-silence-events).
 
 Only declare done once every segment passes both.
 
