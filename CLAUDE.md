@@ -21,6 +21,9 @@ videos (1080×1920@60). The general pipeline mechanics live in the root
 
 ## Hard local rules
 
+- Before editing, run `python helpers/check_repo_freshness.py` and require PASS.
+  `origin` is upstream; `fork` is our backup. Preserve local commits by merging
+  upstream changes into main, testing, and pushing to fork; see `/video` Phase 0.
 - Working dir convention: every video lives under its script month at
   `M:/videos/OBS/prep/YYYY-MM/YYYY-MM-DD[-NN] - <title> [REC YYYY-MM-DD]/`.
   The leading date and optional sequence are the script chronology; `REC` is

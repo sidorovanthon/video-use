@@ -1,6 +1,6 @@
 ---
 name: video
-description: Start processing a new OBS talking-head video — /video <path to prep folder or mp4>. Runs the mechanical freshness/environment gate, then drives the full standard pipeline (mux clean audio, cuts, grade gate, render, SRT) per the canonical recipe. Project-local; this repo only.
+description: Start processing a new OBS talking-head video with /video and a prep-folder or MP4 path. Runs the freshness/environment gate, then the standard pipeline (mux clean audio, cuts, grade gate, render, SRT) per the canonical recipe. Project-local; this repo only.
 ---
 
 # video — one path in, finished video out
@@ -18,12 +18,19 @@ Project memory (auto-loaded) holds the correction history; obey `feedback_*` rul
 
 Run all checks; do not start editing on a stale/dirty/broken setup:
 
-1. **Repo freshness:** `git fetch origin && git status -sb`. If behind
-   `origin/main` → `git pull --ff-only` (if it can't fast-forward, STOP and
-   show the divergence). If the working tree is dirty → show the diff and
-   resolve (commit or stash) before proceeding — uncommitted pipeline fixes
-   died in the 2026-07 data loss.
-2. **Deps:** if the pull changed `pyproject.toml` → `uv sync`.
+1. **Repo freshness:** run `python helpers/check_repo_freshness.py` from the
+   repo. It fetches both remotes and fails on a dirty tree, a non-main branch,
+   missing upstream/fork commits, or unpushed local commits. `origin` is the
+   public upstream; `fork` is our backup. Our main has intentional local commits,
+   so being ahead of origin is normal and `pull --ff-only` cannot handle divergence.
+   Review a dirty tree before committing or parking work. Integrate missing
+   commits with `git merge origin/main` (and `git merge fork/main` when needed).
+   Resolve conflicts preserving local grade, subtitle and Windows-path fixes;
+   run `python -m unittest discover -s tests -v`, review the diff, and commit.
+   Reconcile PR review fixes back into main even when their PR was squash-merged.
+   Push verified main to fork, rerun the helper, and require PASS before editing.
+   If integration or checks fail, resolve the failure before starting a video.
+2. **Deps:** if integration changed `pyproject.toml` or `uv.lock` → `uv sync`.
 3. **Tools:** `ffmpeg -version` and `ffprobe -version` must work. If they report
    "command not found" they are almost certainly **installed but not on this
    shell's PATH** (winget put them in User PATH, but the tool shell's parent
@@ -70,6 +77,15 @@ Run all checks; do not start editing on a stale/dirty/broken setup:
   so every downstream path is byte-identical to the isolated case, then run
   **Phase 1b** — the dB thresholds must be recalibrated before any cutting.
 - Missing transcript → `helpers/transcribe.py` (Scribe; costs money — say so).
+  For multiple audio tracks, inspect which contains narration and explicitly
+  pass `--audio-track N` (zero-based); OBS track assignments vary. Use that same
+  track when muxing raw audio into `source_clean.mp4` (`-map 0:v:0 -map 0:a:N`).
+  The silence guard rejects peaks below -60 dBFS before uploading. Keep raw
+  transcription caches outside the edit's `transcripts/` directory, then copy
+  only the selected result to `transcripts/S0.json` in Phase 2. Nonzero tracks
+  use `<stem>.trackN.json`; the packer reads every JSON and does not choose a
+  track. An existing legacy `<stem>.json` cache is not proof of its audio track;
+  check its contents if changing the selection. Never delete caches automatically.
 
 ## Phase 1b — noise-floor calibration (ONLY when cutting raw audio)
 
