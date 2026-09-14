@@ -148,6 +148,7 @@ build_master_srt(json.loads(open('edl.json').read()), Path('<edit>'), Path('<edi
 
 | Date | Edit | Video | Outcome |
 |---|---|---|---|
+| 2026-09-14 | edit-51 | "Claude Notifications" | Raw-audio 1080×1920@60 MKV with cached Scribe transcript; p05 −96.96 dB gave D=0. User chose **v7-lift58** from a fresh five-way sheet; raw face YAVG 54.7–59.1, no per-segment gamma. Nine segments, 72.117→54.802 s; dropped the `It genuinely—` false start, tightened body pauses, preserved the full outro. Two first-pass joins at 0.289/0.260 s were corrected by RMS-derived edges; final eight joins 0.143–0.184 s, all onsets clean, no visible exposure flashes. Final −14.09 LUFS / −0.66 dBTP, 60/1. SRT 174/174 retained words in 96 cues; no independent script supplied. |
 | 2026-05-06 | edit-01 | (first) | v4a initial; rejected too dark |
 | 2026-05-13 | edit-05 | — | v4a rejected twice → **v6** approved |
 | 2026-06-10 | edit-11 | Losing Context | v6 + softened v6 rejected "выжженным" on bright source → **v7-contrast** approved |
