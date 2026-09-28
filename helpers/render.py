@@ -696,7 +696,10 @@ def build_final_composite(
 
     # Subtitles LAST — Rule 1
     if has_subs:
-        subs_abs = str(subtitles_path.resolve()).replace(":", r"\:").replace("'", r"\'")
+        # FFmpeg treats backslashes in a UNC path as filter escapes. Forward
+        # slashes keep the network path intact; drive-letter colons still need
+        # escaping for the subtitles filter option parser.
+        subs_abs = subtitles_path.resolve().as_posix().replace(":", r"\:").replace("'", r"\'")
         filter_parts.append(
             f"{current}subtitles='{subs_abs}':force_style='{SUB_FORCE_STYLE}'[outv]"
         )
